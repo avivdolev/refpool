@@ -45,13 +45,13 @@ func Example() {
 	go func(r io.Reader) {
 		b := pool.Get().(*example.Buffer)
 		b.Reset()
-		IncElement(b, int64(len(channels)))
+		pool.IncElement(b, int64(len(channels)))
 		io.Copy(b, r)
 		for _, c := range channels {
 			c <- b
 		}
 		wg.Wait()
-		fmt.Printf("done, counter should be %d\n", IncElement(b, 0))
+		fmt.Printf("done, counter should be %d\n", pool.IncElement(b, 0))
 	}(input)
 	wg.Wait()
 

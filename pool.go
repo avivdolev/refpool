@@ -14,19 +14,19 @@ type Element interface {
 	Counter() *int64
 }
 
+// Refpool is the main package type
+type Refpool struct {
+	p sync.Pool
+}
+
 // IncElement adds n to e.Counter() and return the updated value.
-func IncElement(e Element, n int64) int64 {
+func (rp *Refpool) IncElement(e Element, n int64) int64 {
 	return atomic.AddInt64(e.Counter(), n)
 }
 
 // SetElement value of counter
-func SetElement(e Element, n int64) {
+func (rp *Refpool) SetElement(e Element, n int64) {
 	atomic.StoreInt64(e.Counter(), n)
-}
-
-// Refpool is the main package type
-type Refpool struct {
-	p sync.Pool
 }
 
 // New returns a new Refpool.
@@ -45,14 +45,14 @@ func New(new func() Element) *Refpool {
 // The element's counter is set to 0.
 func (rp *Refpool) Get() Element {
 	e := rp.p.Get().(Element)
-	SetElement(e, 0)
+	rp.SetElement(e, 0)
 	return e
 }
 
 // Put an element back into the pool.
 // First lower the counter by 1, and only put it if the value is 0 or lower.
 func (rp *Refpool) Put(e Element) {
-	if IncElement(e, -1) > 0 {
+	if rp.IncElement(e, -1) > 0 {
 		return
 	}
 	rp.p.Put(e)
